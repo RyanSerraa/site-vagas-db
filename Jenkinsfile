@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DB_URL  = credentials('DB_URL')   // com sslmode=require
+        DB_URL  = credentials('DB_URL') 
         DB_USER = credentials('DB_USER')
         DB_PASS = credentials('DB_PASS')
     }
@@ -11,9 +11,9 @@ pipeline {
         stage('Debug migrations') {
             steps {
                 sh '''
-                  echo "Workspace: $WORKSPACE"
+                  echo "Listando migrations..."
                   docker run --rm \
-                    -v $WORKSPACE/migrations:/flyway/sql \
+                    -v /home/ryan-serra/site-vagas-db/migrations:/flyway/sql \
                     busybox \
                     ls -l /flyway/sql
                 '''
@@ -24,7 +24,7 @@ pipeline {
             steps {
                 sh '''
                 docker run --rm \
-                  -v $WORKSPACE/migrations:/flyway/sql \
+                  -v /home/ryan-serra/site-vagas-db/migrations:/flyway/sql \
                   flyway/flyway:10 \
                   -url="$DB_URL" \
                   -user="$DB_USER" \
@@ -39,7 +39,7 @@ pipeline {
             steps {
                 sh '''
                 docker run --rm \
-                  -v $WORKSPACE/migrations:/flyway/sql \
+                  -v /home/ryan-serra/site-vagas-db/migrations:/flyway/sql \
                   flyway/flyway:10 \
                   -url="$DB_URL" \
                   -user="$DB_USER" \
