@@ -11,10 +11,9 @@ pipeline {
         stage('Debug migrations') {
             steps {
                 sh '''
-                  pwd
-                  ls -l migrations
+                  echo "Workspace: $WORKSPACE"
                   docker run --rm \
-                    -v $(pwd)/migrations:/flyway/sql \
+                    -v $WORKSPACE/migrations:/flyway/sql \
                     busybox \
                     ls -l /flyway/sql
                 '''
@@ -25,7 +24,7 @@ pipeline {
             steps {
                 sh '''
                 docker run --rm \
-                  -v $(pwd)/migrations:/flyway/sql \
+                  -v $WORKSPACE/migrations:/flyway/sql \
                   flyway/flyway:10 \
                   -url="$DB_URL" \
                   -user="$DB_USER" \
@@ -40,7 +39,7 @@ pipeline {
             steps {
                 sh '''
                 docker run --rm \
-                  -v $(pwd)/migrations:/flyway/sql \
+                  -v $WORKSPACE/migrations:/flyway/sql \
                   flyway/flyway:10 \
                   -url="$DB_URL" \
                   -user="$DB_USER" \
