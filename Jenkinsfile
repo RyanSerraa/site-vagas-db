@@ -8,32 +8,21 @@ pipeline {
     }
 
     stages {
-        stage('Debug migrations') {
-            steps {
-                sh '''
-                  echo "Listando migrations..."
-                  docker run --rm \
-                    -v /home/ryan-serra/site-vagas-db/migrations:/flyway/sql \
-                    busybox \
-                    ls -l /flyway/sql
-                '''
-            }
-        }
-
-        stage('Validate') {
-            steps {
-                sh '''
-                docker run --rm \
-                  -v /home/ryan-serra/site-vagas-db/migrations:/flyway/sql \
-                  flyway/flyway:10 \
-                  -url="$DB_URL" \
-                  -user="$DB_USER" \
-                  -password="$DB_PASS" \
-                  -locations=filesystem:/flyway/sql \
-                  validate
-                '''
-            }
-        }
+        sstage('Validate') {
+    steps {
+        sh '''
+        docker run --rm \
+          -v /home/ryan-serra/site-vagas-db/migrations:/flyway/sql \
+          flyway/flyway:10 \
+          -url="$DB_URL" \
+          -user="$DB_USER" \
+          -password="$DB_PASS" \
+          -locations=filesystem:/flyway/sql \
+          -ignoreMigrationPatterns='*:pending' \
+          validate
+        '''
+    }
+}
 
         stage('Migrate') {
             steps {
