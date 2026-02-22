@@ -8,15 +8,17 @@ pipeline {
     }
 
     stages {
+
         stage('Validate') {
             steps {
                 sh '''
                 docker run --rm \
-                  -v "$WORKSPACE/migrations:/flyway/sql" \
+                  -v $(pwd)/migrations:/flyway/sql \
                   flyway/flyway:10 \
                   -url="$DB_URL" \
                   -user="$DB_USER" \
                   -password="$DB_PASS" \
+                  -locations=filesystem:/flyway/sql \
                   validate
                 '''
             }
@@ -26,14 +28,14 @@ pipeline {
             steps {
                 sh '''
                 ls -l migrations
-
                 docker run --rm \
-                -v $(pwd)/migrations:/flyway/sql \
-                flyway/flyway:10 \
-                -url=$DB_URL \
-                -user=$DB_USER \
-                -password=$DB_PASS \
-                info
+                  -v $(pwd)/migrations:/flyway/sql \
+                  flyway/flyway:10 \
+                  -url="$DB_URL" \
+                  -user="$DB_USER" \
+                  -password="$DB_PASS" \
+                  -locations=filesystem:/flyway/sql \
+                  migrate
                 '''
             }
         }
