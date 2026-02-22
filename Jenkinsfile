@@ -9,37 +9,31 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
         stage('Validate') {
             steps {
-                sh """
+                sh '''
                 docker run --rm \
-                -v \$(pwd)/migrations:/flyway/sql \
+                -v $(pwd)/migrations:/flyway/sql \
                 flyway/flyway \
                 -url=$DB_URL \
                 -user=$DB_USER \
                 -password=$DB_PASS \
                 validate
-                """
+                '''
             }
         }
 
         stage('Migrate') {
             steps {
-                sh """
+                sh '''
                 docker run --rm \
-                -v \$(pwd)/migrations:/flyway/sql \
+                -v $(pwd)/migrations:/flyway/sql \
                 flyway/flyway \
                 -url=$DB_URL \
                 -user=$DB_USER \
                 -password=$DB_PASS \
                 migrate
-                """
+                '''
             }
         }
     }
