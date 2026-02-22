@@ -8,7 +8,6 @@ pipeline {
     }
 
     stages {
-
         stage('Validate') {
             steps {
                 sh '''
@@ -26,13 +25,15 @@ pipeline {
         stage('Migrate') {
             steps {
                 sh '''
+                ls -l migrations
+
                 docker run --rm \
-                  -v "$WORKSPACE/migrations:/flyway/sql" \
-                  flyway/flyway:10 \
-                  -url="$DB_URL" \
-                  -user="$DB_USER" \
-                  -password="$DB_PASS" \
-                  migrate
+                -v $(pwd)/migrations:/flyway/sql \
+                flyway/flyway:10 \
+                -url=$DB_URL \
+                -user=$DB_USER \
+                -password=$DB_PASS \
+                info
                 '''
             }
         }
