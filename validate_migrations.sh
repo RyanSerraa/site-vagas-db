@@ -1,83 +1,90 @@
-# #!/bin/bash
+#!/bin/bash
 
-# pattern="^V([0-9]+)\.([0-9]+)\.([0-9]+)__(.+)\.sql$"
+pattern="^V([0-9]+)\.([0-9]+)\.([0-9]+)__(.+)\.sql$"
 
-# files=$(git diff --cached --name-only --diff-filter=ACM | grep migrations)
+# 🔹 pega apenas .sql dentro de migrations
+files=$(git diff --cached --name-only --diff-filter=ACM | grep migrations | grep '\.sql$')
 
-# [ -z "$files" ] && exit 0
+[ -z "$files" ] && exit 0
 
-# invalid=0
+invalid=0
 
-# # 🔹 pega última versão commitada (main)
-# last_version=$(git ls-files migrations \
-#   | sed -E 's/.*V([0-9]+\.[0-9]+\.[0-9]+)__.*$/\1/' \
-#   | sort -V \
-#   | tail -n1)
+# 🔹 pega última versão commitada (somente arquivos válidos)
+last_version=$(git ls-files migrations \
+  | grep '\.sql$' \
+  | sed -nE 's/.*V([0-9]+\.[0-9]+\.[0-9]+)__.*$/\1/p' \
+  | sort -V \
+  | tail -n1)
 
-# echo "📌 Última versão encontrada: V$last_version"
+# 🔹 fallback seguro
+if [[ -z "$last_version" ]]; then
+  echo "⚠️ Nenhuma versão encontrada, usando V0.0.0"
+  last_version="0.0.0"
+fi
 
-# # transforma versão em número comparável
-# version_to_number() {
-#   IFS='.' read -r major minor patch <<< "$1"
-#   echo $((major * 1000000 + minor * 1000 + patch))
-# }
+echo "📌 Última versão encontrada: V$last_version"
 
-# last_version_num=$(version_to_number "$last_version")
+# 🔹 transforma versão em número comparável
+version_to_number() {
+  IFS='.' read -r major minor patch <<< "$1"
+  echo $((major * 1000000 + minor * 1000 + patch))
+}
 
-# for file in $files; do
-#   filename=$(basename "$file")
+last_version_num=$(version_to_number "$last_version")
 
-#   echo ""
-#   echo "🔍 Validando: $filename"
+for file in $files; do
+  filename=$(basename "$file")
 
-#   # 🔹 valida __
-#   if [[ "$filename" != *"__"* ]]; then
-#     suggestion=$(echo "$filename" | sed -E 's/_(.+)/__\1/')
-#     echo "❌ Falta '__'"
-#     echo "💡 Sugestão: $suggestion"
-#     invalid=1
-#     continue
-#   fi
+  echo ""
+  echo "🔍 Validando: $filename"
 
-#   # 🔹 valida regex completa
-#   if [[ ! $filename =~ $pattern ]]; then
-#     echo "❌ Nome fora do padrão"
-#     echo "Formato esperado: V1.49.0__descricao.sql"
-#     invalid=1
-#     continue
-#   fi
+  # 🔹 valida __
+  if [[ "$filename" != *"__"* ]]; then
+    suggestion=$(echo "$filename" | sed -E 's/_(.+)/__\1/')
+    echo "❌ Falta '__'"
+    echo "💡 Sugestão: $suggestion"
+    invalid=1
+    continue
+  fi
 
-#   # 🔹 extrai versão
-#   version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
-#   version_num=$(version_to_number "$version")
+  # 🔹 valida regex completa (3 níveis obrigatórios)
+  if [[ ! $filename =~ $pattern ]]; then
+    echo "❌ Nome fora do padrão"
+    echo "Formato esperado: V1.49.0__descricao.sql"
+    invalid=1
+    continue
+  fi
 
-#   # 🔹 valida se versão é maior
-#   if [ "$version_num" -le "$last_version_num" ]; then
-#     echo "❌ Versão inválida: V$version"
-#     echo "💡 Deve ser maior que: V$last_version"
+  # 🔹 extrai versão
+  version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[3]}"
+  version_num=$(version_to_number "$version")
 
-#     # sugestão automática
-#     IFS='.' read -r major minor patch <<< "$last_version"
+  # 🔹 valida se versão é maior
+  if [ "$version_num" -le "$last_version_num" ]; then
+    echo "❌ Versão inválida: V$version"
+    echo "💡 Deve ser maior que: V$last_version"
 
-#     next_patch="V$major.$minor.$((patch + 1))"
-#     next_minor="V$major.$((minor + 1)).0"
+    IFS='.' read -r major minor patch <<< "$last_version"
 
-#     echo "💡 Sugestões válidas:"
-#     echo "   → $next_patch"
-#     echo "   → $next_minor"
+    next_patch="V$major.$minor.$((patch + 1))"
+    next_minor="V$major.$((minor + 1)).0"
 
-#     invalid=1
-#     continue
-#   fi
+    echo "💡 Sugestões válidas:"
+    echo "   → $next_patch"
+    echo "   → $next_minor"
 
-#   echo "✅ OK"
-# done
+    invalid=1
+    continue
+  fi
 
-# if [ $invalid -eq 1 ]; then
-#   echo ""
-#   echo "🚫 Commit bloqueado."
-#   exit 1
-# fi
+  echo "✅ OK"
+done
 
-# echo ""
-# echo "✅ Todas as migrations estão válidas"
+if [ $invalid -eq 1 ]; then
+  echo ""
+  echo "🚫 Commit bloqueado."
+  exit 1
+fi
+
+echo ""
+echo "✅ Todas as migrations estão válidas"
