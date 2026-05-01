@@ -2,40 +2,47 @@ pipeline {
     agent any
 
     environment {
-        DB_URL  = credentials('DB_URL')
-        DB_USER = credentials('DB_USER')
-        DB_PASS = credentials('DB_PASS')
+        FLYWAY_IMAGE = "flyway/flyway:10"
     }
 
     stages {
         stage('Validate') {
             steps {
-                sh '''
-                docker run --rm \
-                  -v "$WORKSPACE/migrations:/flyway/sql" \
-                  flyway/flyway:10 \
-                  -url="$DB_URL" \
-                  -user="$DB_USER" \
-                  -password="$DB_PASS" \
-                  -locations=filesystem:/flyway/sql \
-                  -ignoreMigrationPatterns="*:pending" \
-                  validate
-                '''
+                withCredentials([
+                    string(credentialsId: 'DB_URL', variable: 'DB_URL'),
+                    string(credentialsId: 'DB_USER', variable: 'DB_USER'),
+                    string(credentialsId: 'DB_PASS', variable: 'DB_PASS')
+                ]) {
+                    sh '''
+                    docker run --rm \
+                      -v "${WORKSPACE}/migrations:/flyway/sql" \
+                      $FLYWAY_IMAGE \
+                      -url="$DB_URL" \
+                      -user="$DB_USER" \
+                      -password="$DB_PASS" \
+                      validate
+                    '''
+                }
             }
         }
 
         stage('Migrate') {
             steps {
-                sh '''
-                docker run --rm \
-                  -v "$WORKSPACE/migrations:/flyway/sql" \
-                  flyway/flyway:10 \
-                  -url="$DB_URL" \
-                  -user="$DB_USER" \
-                  -password="$DB_PASS" \
-                  -locations=filesystem:/flyway/sql \
-                  migrate
-                '''
+                withCredentials([
+                    string(credentialsId: 'DB_URL', variable: 'DB_URL'),
+                    string(credentialsId: 'DB_USER', variable: 'DB_USER'),
+                    string(credentialsId: 'DB_PASS', variable: 'DB_PASS')
+                ]) {
+                    sh '''
+                    docker run --rm \
+                      -v "${WORKSPACE}/migrations:/flyway/sql" \
+                      $FLYWAY_IMAGE \
+                      -url="$DB_URL" \
+                      -user="$DB_USER" \
+                      -password="$DB_PASS" \
+                      migrate
+                    '''
+                }
             }
         }
     }
