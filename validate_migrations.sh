@@ -47,7 +47,7 @@ for file in $files; do
 
   if [[ ! $filename =~ $pattern ]]; then
     echo "❌ Nome fora do padrão"
-    echo "Formato esperado: V1.49.0__descricao.sql"
+    echo "Formato esperado: V1.1.0__descricao.sql"
     invalid=1
     continue
   fi
