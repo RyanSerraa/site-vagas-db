@@ -45,5 +45,4 @@ pipeline {
         failure {
             echo 'Falha na execução do Flyway'
         }
-    }
 }
