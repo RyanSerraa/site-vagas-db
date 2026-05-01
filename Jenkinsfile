@@ -5,44 +5,35 @@ pipeline {
         FLYWAY_IMAGE = "flyway/flyway:10"
     }
 
-    stages {
+    
         stage('Validate') {
             steps {
-                withCredentials([
-                    string(credentialsId: 'DB_URL', variable: 'DB_URL'),
-                    string(credentialsId: 'DB_USER', variable: 'DB_USER'),
-                    string(credentialsId: 'DB_PASS', variable: 'DB_PASS')
-                ]) {
-                    sh '''
-                    docker run --rm \
-                      -v "${WORKSPACE}/migrations:/flyway/sql" \
-                      $FLYWAY_IMAGE \
-                      -url="$DB_URL" \
-                      -user="$DB_USER" \
-                      -password="$DB_PASS" \
-                      validate
-                    '''
-                }
+                sh '''
+                docker run --rm \
+                  -v /home/ryan-serra/site-vagas-db/migrations:/flyway/sql \
+                  flyway/flyway:10 \
+                  -url="$DB_URL" \
+                  -user="$DB_USER" \
+                  -password="$DB_PASS" \
+                  -locations=filesystem:/flyway/sql \
+                  -ignoreMigrationPatterns='*:pending' \
+                  validate
+                '''
             }
         }
 
-        stage('Migrate') {
+       stage('Migrate') {
             steps {
-                withCredentials([
-                    string(credentialsId: 'DB_URL', variable: 'DB_URL'),
-                    string(credentialsId: 'DB_USER', variable: 'DB_USER'),
-                    string(credentialsId: 'DB_PASS', variable: 'DB_PASS')
-                ]) {
-                    sh '''
-                    docker run --rm \
-                      -v "${WORKSPACE}/migrations:/flyway/sql" \
-                      $FLYWAY_IMAGE \
-                      -url="$DB_URL" \
-                      -user="$DB_USER" \
-                      -password="$DB_PASS" \
-                      migrate
-                    '''
-                }
+                sh '''
+                docker run --rm \
+                  -v /home/ryan-serra/site-vagas-db/migrations:/flyway/sql \
+                  flyway/flyway:10 \
+                  -url="$DB_URL" \
+                  -user="$DB_USER" \
+                  -password="$DB_PASS" \
+                  -locations=filesystem:/flyway/sql \
+                  migrate
+                '''
             }
         }
     }
